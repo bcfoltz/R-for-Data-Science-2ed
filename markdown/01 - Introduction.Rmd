@@ -1,0 +1,12 @@
+---
+title: "R4DS Chapter 1"
+author: "Brandon Foltz"
+date: "2023-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+install.packages(c("babynames", "gapminder", "nycflights13", "palmerpenguins"))
+```

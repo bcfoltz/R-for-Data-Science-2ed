@@ -1,0 +1,193 @@
+---
+title: 'R4DS: Chapter 20'
+author: "Brandon Foltz"
+date: "2023-03-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(nycflights13)
+```
+
+Finding keys using a simple count and checking for NA's which will not show up in count.
+```{r}
+planes|>
+  count(tailnum)|>
+  filter(n > 1)
+
+weather|>
+  count(time_hour, origin)|>
+  filter(n > 1)
+
+planes|>
+  filter(is.na(tailnum))
+
+weather|>
+  filter(is.na(time_hour) | is.na(origin))
+```
+
+Surrogate Keys
+
+```{r}
+flights|>
+  count(time_hour, carrier, flight)|>
+  filter(n > 1)
+
+airports|>
+  count(alt, lat)|>
+  filter(n > 1)
+
+#surrogate key that is the row number, like an index
+flights2 <- flights|>
+  mutate(id = row_number(), .before = 1)
+flights2
+```
+Basic Joins
+
+```{r}
+flights2 <- flights|>
+  select(year, time_hour, origin, dest, tailnum, carrier)
+flights2
+
+flights2|>
+  left_join(airlines)
+
+flights2|>
+  left_join(weather|>
+  select(origin, time_hour, temp, wind_speed))
+
+flights2|>
+  left_join(planes|>
+              select(tailnum, type, engines, seats))
+
+flights2|>
+  filter(tailnum == "N3ALAA")|>
+  left_join(planes|>
+              select(tailnum, type, engines, seats))
+```
+
+Specifying Join Keys
+```{r}
+flights2|>
+  left_join(planes)
+
+flights2|>
+  left_join(planes, join_by(tailnum))
+
+flights2|>
+  left_join(airports, join_by(dest == faa))
+
+flights2|>
+  left_join(airports, join_by(origin == faa))
+```
+
+Filtering Joins
+
+```{r}
+airports|>
+  semi_join(flights2, join_by(faa==origin))
+
+airports|>
+  semi_join(flights2, join_by(faa==dest))
+
+#For example, we can find rows that are missing from airports by looking for flights that don’t have a matching destination airport:
+
+flights2|>
+  anti_join(airports, join_by(dest==faa))|>
+  distinct(dest)
+
+# Or we can find tailnums that are missing from planes
+
+flights2|>
+  anti_join(planes, join_by(tailnum))|>
+  distinct(tailnum)
+```
+
+How do joins work?
+
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     3, "x3"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2",
+     4, "y3"
+)
+```
+Non-eqi joins
+
+```{r}
+x |> left_join(y, by = "key", keep = TRUE)
+
+```
+
+Cross Joins
+
+```{r}
+# cartesian product of a list (permutations)
+
+df <- tibble(name = c("John", "Simon", "Tracy", "Max"))
+df |> cross_join(df)
+
+# inequality join (combinations)
+
+df <- tibble(id = 1:4, name = c("John", "Simon", "Tracy", "Max"))
+
+df |> left_join(df, join_by(id < id))
+```
+
+Rolling Join
+
+For example, imagine that you’re in charge of the party planning commission for your office. Your company is rather cheap so instead of having individual parties, you only have a party once each quarter. The rules for determining when a party will be held are a little complex: parties are always on a Monday, you skip the first week of January since a lot of people are on holiday, and the first Monday of Q3 2022 is July 4, so that has to be pushed back a week. That leads to the following party days:
+
+```{r}
+parties <- tibble(
+  q = 1:4,
+  party = ymd(c("2022-01-10", "2022-04-04", "2022-07-11", "2022-10-03"))
+)
+
+employees <- tibble(
+  name = sample(babynames::babynames$name, 100),
+  birthday = ymd("2022-01-01") + (sample(365, 100, replace = TRUE) - 1)
+)
+employees
+
+#And for each employee we want to find the first party date that comes after (or on) their birthday. We can express that with a rolling join:
+  
+employees |> 
+  left_join(parties, join_by(closest(birthday >= party)))
+```
+
+Overlap Joins
+
+```{r}
+parties <- tibble(
+  q = 1:4,
+  party = ymd(c("2022-01-10", "2022-04-04", "2022-07-11", "2022-10-03")),
+  start = ymd(c("2022-01-01", "2022-04-04", "2022-07-11", "2022-10-03")),
+  end = ymd(c("2022-04-03", "2022-07-11", "2022-10-02", "2022-12-31"))
+)
+parties
+
+parties|>
+  inner_join(parties, join_by(overlaps(start, end, start, end), q < q))|>
+  select(start.x, end.x, start.y, end.y)
+
+parties <- tibble(
+  q = 1:4,
+  party = ymd(c("2022-01-10", "2022-04-04", "2022-07-11", "2022-10-03")),
+  start = ymd(c("2022-01-01", "2022-04-04", "2022-07-11", "2022-10-03")),
+  end = ymd(c("2022-04-03", "2022-07-10", "2022-10-02", "2022-12-31"))
+)
+
+employees|>
+  inner_join(parties, join_by(between(birthday, start, end)), unmatched = "error")
+```
+

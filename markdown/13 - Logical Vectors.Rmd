@@ -1,0 +1,200 @@
+---
+title: 'R4DS: Logical Vectors'
+author: "Brandon Foltz"
+date: "2023-03-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(nycflights13)
+```
+
+```{r}
+x <- c(1,2,3,5,7,11,13)
+x*2
+df <- tibble(x)
+df|>
+  mutate(y = x*2)
+```
+
+```{r}
+flights|>
+  filter(dep_time > 600 & dep_time < 2000 & abs(arr_delay) < 20)
+```
+
+```{r}
+flights|>
+  mutate(
+    daytime = dep_time > 600 & dep_time < 2000,
+    approx_ontime = abs(arr_delay) < 20,
+    .keep = "used"
+  )|>
+  filter(daytime & approx_ontime)
+```
+
+```{r}
+x <- c(1/49 * 49, sqrt(2)^2)
+x
+x == c(1,2)
+print(x, digits = 16)
+```
+```{r}
+NA > 5
+10 == NA
+NA == NA
+```
+
+```{r}
+flights|>
+  filter(dep_time == NA)
+```
+```{r}
+is.na(c(TRUE, NA, FALSE))
+is.na(c(1, NA, 3))
+is.na(c("a", NA, "b"))
+```
+```{r}
+flights|>
+  filter(is.na(dep_time))
+```
+```{r}
+flights|>
+  filter(month == 1, day == 1)|>
+  arrange(dep_time)
+
+flights|>
+  filter(month == 1, day == 1)|>
+  arrange(desc(is.na(dep_time)), dep_time)
+```
+
+```{r}
+flights|>
+  filter(month == 11 | month == 12)
+
+flights|>
+  mutate(
+    nov = month == 11,
+    final = nov | 12,
+    .keep = "used"
+  )
+```
+```{r}
+1:12 %in% c(1,5,11)
+flights|>
+  filter(month %in% c(11,12))
+
+```
+```{r}
+flights|>
+  filter(dep_time %in% c(NA, 0800))
+```
+
+13.4 Summaries
+https://r4ds.hadley.nz/logicals.html#sec-logical-summaries
+
+```{r}
+flights|>
+  group_by(year, month, day) |>
+  summarise(
+    all_delayed = all(dep_delay <= 60, na.rm = TRUE),
+    any_long_delay = any(arr_delay >= 300, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+Use the 1s and 0s in booleans to get summaries.
+
+```{r}
+flights|>
+  group_by(year, month, day)|>
+  summarise(
+    all_delayed = mean(dep_delay <= 60, na.rm = TRUE),
+    any_long_delay = sum(arr_delay >= 300, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+Imagine we wanted to look at the average delay just for flights that were actually delayed. One way to do so would be to first filter the flights and then calculate the average delay:
+
+```{r}
+flights|>
+  filter(arr_delay > 0) |>
+  group_by(year, month, day)|>
+  summarise(
+    behind = mean(arr_delay),
+    n = n(),
+    .groups = "drop"
+  )
+```
+Instead you could use [ to perform an inline filtering: arr_delay[arr_delay > 0] will yield only the positive arrival delays.
+
+```{r}
+flights |>
+  group_by(year, month, day)|>
+  summarise(
+    behind = mean(arr_delay[arr_delay > 0], na.rm = TRUE),
+    ahead = mean(arr_delay[arr_delay < 0], na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+```
+13.5 Conditional Transformations
+https://r4ds.hadley.nz/logicals.html#conditional-transformations
+
+```{r if_else}
+x <- c(-3:3, NA)
+if_else(x > 0, "+ve", "-ve")
+
+if_else(x > 0, "+ve", "-ve", "???") # ??? for NA values
+
+if_else(x < 0, -x, x)
+
+x1<- c(NA, 1, 2, NA)
+y1 <- c(3, NA, 4, 6)
+if_else(is.na(x1), y1, x1)
+coalesce(x1, y1)
+```
+
+```{r case_when}
+x <- c(-3:3, NA)
+case_when(
+  x == 0 ~ "0",
+  x < 0 ~ "-ve",
+  x > 0 ~ "+ve",
+  is.na(x) ~ "???"
+)
+
+case_when(
+  x < 0 ~ "-ve",
+  x > 0 ~ "+ve"
+)
+
+case_when(
+  x < 0 ~ "-ve",
+  x > 0 ~ "+ve",
+  TRUE ~ "???"
+)
+
+case_when(
+  x > 0 ~ "+ve",
+  x > 2 ~ "big"
+)
+```
+Make human-readable labels!
+
+```{r}
+flights|>
+  mutate(
+    status = case_when(
+      is.na(arr_delay) ~ "cancelled",
+      arr_delay < -30 ~ "very early",
+      arr_delay < -15 ~ "early",
+      abs(arr_delay) <= 15 ~ "on time",
+      arr_delay < 60 ~ "late",
+      arr_delay < Inf ~ "very late"
+    ),
+    .keep = "used"
+)
+```
+

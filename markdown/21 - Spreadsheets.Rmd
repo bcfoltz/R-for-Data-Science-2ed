@@ -1,0 +1,46 @@
+---
+title: 'R4DS: Chapter 21'
+author: "Brandon Foltz"
+date: "2023-03-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(tidyverse)
+library(writexl)
+library(googlesheets4)
+```
+```{r}
+students <- read_excel("../data/students.xlsx")
+students # messy
+
+# fix column names
+students  <- read_excel("../data/students.xlsx",
+           col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age"), 
+           skip = 1, 
+           na = c("","N/A"),
+           col_types = c("numeric", "text", "text", "text", "text")
+)
+
+students <- students|>
+  mutate(
+    age = if_else(age == "five", "5", age),
+    age = parse_number(age)
+  )
+
+students
+
+# can also select ranges with range = ""
+```
+
+Google Sheets
+
+```{r}
+students_url <- "https://docs.google.com/spreadsheets/d/1V1nPp1tzOuutXFLb3G9Eyxi3qxeEhnOXUzL5_BcCQ0w"
+students_goog <- read_sheet(students_url)
+
+students_goog
+```
+

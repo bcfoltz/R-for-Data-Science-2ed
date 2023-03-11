@@ -1,0 +1,35 @@
+---
+title: 'R4DS: Chapter 8'
+author: "Brandon Foltz"
+date: "2023-03-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+```
+```{r}
+students <- read_csv("../data/students.csv", na = c("N/A", ""))
+students
+```
+
+```{r}
+students|>
+  rename(
+    student_id = `Student ID`,
+    full_name = `Full Name`
+  )
+```
+```{r}
+students|>
+  janitor::clean_names()|>
+  mutate(
+    meal_plan = factor(meal_plan),
+    age = parse_number(if_else(age == "five", "5", age))
+  )
+```
+Usually, read_csv() uses the first line of the data for the column names, which is a very common convention. But it’s not uncommon for a few lines of metadata to be included at the top of the file. You can use skip = n to skip the first n lines or use comment = "#" to drop all lines that start with (e.g.) #.
+
+

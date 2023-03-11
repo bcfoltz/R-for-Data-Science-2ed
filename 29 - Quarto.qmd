@@ -1,0 +1,49 @@
+---
+title: "R4DS: Chapter 29"
+author: "Brandon Foltz"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed)
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+smaller <- diamonds|>
+  filter(carat <= 2.5)
+```
+
+We have data about `r nrow(diamonds)` diamonds. Only `r nrow(diamonds) - nrow(smaller)` are larger than 2.5 carats. The distribution of teh remainder is shown below.
+
+```{r}
+#| label: plot-smaller-diamonds
+#| echo: false
+
+smaller|>
+  ggplot(aes(x = carat)) +
+  geom_freqpoly(binwidth = 0.01)
+```
+
+{{< video src="https://www.youtube.com/watch?v=y5VcxMOnj3M"" >}}

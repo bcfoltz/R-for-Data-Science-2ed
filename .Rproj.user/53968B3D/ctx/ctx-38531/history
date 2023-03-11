@@ -1,0 +1,2 @@
+install.packages(c("cachem", "classInt", "data.table", "dbplyr", "dtplyr", "fastmap", "fma", "forecast", "fpp2", "fs", "gdtools", "ggplot2", "haven", "httr", "lava", "lubridate", "parsnip", "RcppArmadillo", "RcppParallel", "readr", "readxl", "recipes", "tidyverse", "workflows", "xts"))
+install.packages(c("boot", "class", "codetools", "foreign", "MASS", "Matrix", "mgcv", "nlme", "spatial", "survival"), lib="C:/R/R-4.2.2/library")

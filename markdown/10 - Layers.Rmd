@@ -1,0 +1,259 @@
+---
+title: 'R4DS: Chapter 10'
+author: "Brandon Foltz"
+date: "2023-03-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggridges)
+```
+
+```{r}
+mpg
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy, color = class)) +
+  geom_point()
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy, shape = class)) +
+  geom_point()
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_point(color = "blue")
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_point()
+
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_smooth()
+
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_point(color = "orange") +
+  geom_smooth()
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy, shape = drv)) +
+  geom_smooth()
+
+ggplot(mpg,
+       aes(displ, hwy, linetype = drv)) +
+  geom_smooth()
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy, color = drv)) +
+  geom_point() +
+  geom_smooth()
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_smooth()
+
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_smooth(aes(group = drv))
+
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_smooth(aes(color = drv), show.legend = FALSE)
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth()
+```
+
+```{r}
+ggplot(mpg,
+       aes(displ, hwy)) +
+  geom_point() +
+  geom_point(
+    data = mpg|>
+      filter(class == "2seater"),
+    color = "red"
+  ) +
+  geom_point(
+    data = mpg|>
+      filter(class == "2seater"),
+    shape = "circle open", size = 3, color = "red"
+  )
+```
+
+```{r}
+ggplot(mpg,
+       aes(hwy)) +
+  geom_histogram(binwidth = 2)
+
+ggplot(mpg,
+       aes(hwy)) +
+  geom_density()
+
+ggplot(mpg,
+       aes(hwy)) +
+  geom_boxplot()
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = hwy, y = drv, fill = drv, color = drv)) +
+  geom_density_ridges(alpha = 0.3, show.legend = FALSE)
+```
+
+10.4 Facets
+https://r4ds.hadley.nz/layers.html#facets
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_wrap(~cyl)
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_grid(drv~cyl)
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_grid(drv~cyl, scales = "free")
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_grid(drv ~ .)
+
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point() +
+  facet_grid(. ~ cyl)
+```
+
+10.5 Statistical Transformations
+https://r4ds.hadley.nz/layers.html#statistical-transformations
+
+```{r}
+ggplot(diamonds,
+       aes(cut)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(diamonds,
+       aes(x = cut, y = after_stat(prop), group = 1)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(diamonds) +
+  stat_summary(
+    aes(x = cut, y = depth),
+    fun.min = min,
+    fun.max = max,
+    fun = median
+  )
+```
+
+```{r}
+ggplot(diamonds,
+       aes(x = cut, y = after_stat(prop), group = 1)) +
+  geom_bar()
+
+ggplot(diamonds,
+       aes(x = cut, y = after_stat(prop), fill = color)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(diamonds,
+       aes(x = cut, fill = cut)) +
+  geom_bar()
+
+ggplot(diamonds,
+       aes(x = cut, fill = clarity)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(diamonds,
+       aes(x = cut, fill = clarity)) +
+  geom_bar(position = "fill")
+
+ggplot(diamonds,
+       aes(x = cut, fill = clarity)) +
+  geom_bar(position = "dodge")
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_point(position = "jitter")
+
+ggplot(mpg,
+       aes(x = displ, y = hwy)) +
+  geom_jitter()
+```
+
+```{r}
+nz <- map_data("nz")
+
+ggplot(nz, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "lightgreen", color = "black")
+
+ggplot(nz, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill = "lightgreen", color = "black") +
+  coord_quickmap()
+```
+
+```{r}
+bar <- ggplot(data = diamonds) +
+  geom_bar(
+    mapping = aes(x = cut, fill = cut),
+    show.legend = FALSE,
+    width = 1
+  ) +
+  theme(aspect.ratio = 1) +
+  labs(x = NULL, y = NULL)
+
+bar + coord_flip()
+bar + coord_polar()
+```
+
+```{r}
+ggplot(mpg,
+       aes(x = cty, y = hwy)) +
+  geom_point() +
+  geom_abline() +
+  coord_fixed() +
+  theme(aspect.ratio = 1)
+```
+

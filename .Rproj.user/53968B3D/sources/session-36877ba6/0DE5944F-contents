@@ -1,0 +1,214 @@
+---
+title: 'R4DS: Chapter 27'
+author: "Brandon Foltz"
+date: "2023-03-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+```{r}
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+df %>% 
+  summarise(
+    n = n(),
+    a = median(a),
+    b = median(b),
+    c = median(c),
+    d = median(d)
+  )
+
+df %>% 
+  summarise(
+    n = n(),
+    across(a:d, median)
+  )
+```
+
+Selecting columns with .cols
+
+```{r}
+df <- tibble(
+  grp = sample(2, 10, replace = TRUE),
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+df %>% 
+  group_by(grp) %>% 
+  summarise(across(everything(), median))
+```
+
+where() allows you to select columns based on their type:
+
+where(is.numeric) selects all numeric columns.
+where(is.character) selects all string columns.
+where(is.Date) selects all date columns.
+where(is.POSIXct) selects all date-time columns.
+where(is.logical) selects all logical columns.
+
+Calling multiple functions
+
+```{r}
+rnorm_na <- function(n, n_na, mean = 0, sd = 1){
+  sample(c(rnorm(n - n_na, mean = mean, sd = sd), rep(NA, n_na)))
+}
+
+df_miss <- tibble(
+  a = rnorm_na(5, 1),
+  b = rnorm_na(5, 1),
+  c = rnorm_na(5, 2),
+  d = rnorm(5)
+)
+
+df_miss %>% 
+  summarise(
+    across(a:d, median),
+    n = n()
+  )
+
+df_miss %>% 
+  summarise(
+    across(a:d, function(x) median(x, na.rm = TRUE)),
+    n = n()
+  )
+
+df_miss %>% 
+  summarise(
+    across(a:d, list(
+      median = \(x) median(x, na.rm = TRUE),
+      n_miss = \(x) sum(is.na(x))
+    )),
+    n = n()
+  )
+```
+
+Column names
+
+```{r}
+df_miss %>% 
+  summarise(
+    across(
+      a:d,
+      list(
+        median = \(x) median(x, na.rm = TRUE),
+        n_miss = \(x) sum(is.na(x))
+      ),
+      .names = "{.fn}_{.col}"
+    ),
+    n = n(),
+  )
+```
+
+```{r}
+df_miss %>% 
+  mutate(
+    across(a:d, \(x) coalesce(x, 0))
+  )
+
+df_miss %>% 
+  mutate(
+    across(a:d, \(x) abs(x), .names = "{.col}_abs")
+  )
+```
+
+Filtering
+
+```{r}
+df_miss %>% 
+  filter(if_any(a:d, is.na))
+
+df_miss %>% 
+  filter(if_all(a:d, is.na))
+```
+
+across() in functions
+
+```{r}
+expand_dates <- function(df){
+  df %>% 
+    mutate(
+      across(where(is.Date), list(year = year, month = month, day = mday))
+    )
+}
+
+df_date <- tibble(
+  name = c("Amy", "Bob"),
+  date = ymd(c("2009-08-03", "2010-01-16"))
+)
+
+df_date %>% 
+  expand_dates()
+```
+
+```{r}
+summarize_means <- function(df, summary_vars = where(is.numeric)) {
+  df %>% 
+    summarise(
+      across({{summary_vars}}, \(x) mean(x, na.rm = TRUE)),
+      n = n()
+    )
+}
+
+diamonds %>% 
+  group_by(cut) %>% 
+  summarize_means()
+
+diamonds %>% 
+  group_by(cut) %>% 
+  summarize_means(c(carat, x:z))
+```
+
+vs pivot_longer()
+
+```{r}
+df %>% 
+  summarise(across(a:d, list(median = median, mean = mean)))
+
+long <- df %>% 
+  pivot_longer(a:d) %>% 
+  group_by(name) %>% 
+  summarise(
+    median = median(value),
+    mean = mean(value)
+  )
+
+long
+```
+
+```{r}
+df_paired <- tibble(
+  a_val = rnorm(10),
+  a_wts = runif(10),
+  b_val = rnorm(10),
+  b_wts = runif(10),
+  c_val = rnorm(10),
+  c_wts = runif(10),
+  d_val = rnorm(10),
+  d_wts = runif(10)
+)
+
+df_long <- df_paired %>% 
+  pivot_longer(
+    everything(),
+    names_to = c("group", ".value"),
+    names_sep = "_"
+  )
+
+df_long
+
+df_long %>% 
+  group_by(group) %>% 
+  summarise(mean = weighted.mean(val, wts))
+```
+
